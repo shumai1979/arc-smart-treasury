@@ -19,8 +19,12 @@
         .btn-main:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(255,255,255,0.1); }
         .btn-secondary { background: #111; color: #666; border: 1px solid #222; margin-bottom: 10px; }
         
-        #status { margin-top: 20px; font-size: 11px; color: #333; font-family: monospace; }
-        .connected-badge { color: #10b981; font-size: 10px; font-weight: bold; border: 1px solid #10b981; padding: 2px 8px; border-radius: 20px; display: none; }
+        #status { margin-top: 20px; font-size: 11px; color: #333; font-family: monospace; line-height: 1.4; }
+        .connected-badge { color: #10b981; font-size: 10px; font-weight: bold; border: 1px solid #10b981; padding: 2px 8px; border-radius: 20px; display: none; margin-left: 10px; }
+        
+        .input-group { margin-bottom: 15px; text-align: left; }
+        .input-group label { font-size: 10px; color: #444; text-transform: uppercase; display: block; margin-bottom: 5px; }
+        .amount-input { background: #000; border: 1px solid #222; color: #fff; padding: 10px; width: 100%; border-radius: 8px; box-sizing: border-box; font-family: monospace; outline: none; }
     </style>
 </head>
 <body>
@@ -30,35 +34,51 @@
     <p>Infraestrutura de Stablecoins Inteligentes</p>
 
     <div class="stat-card">
-        <div class="stat-label">Saldo em Carteira (USDC)</div>
+        <div class="stat-label">Saldo Carteira (Gas USDC) <span id="connBadge" class="connected-badge">LIGADO</span></div>
         <div id="walletBalance" class="stat-value">0.00</div>
-        <div id="connBadge" class="connected-badge">LIGADO</div>
     </div>
 
     <div class="stat-card" style="border-left: 3px solid #7c3aed;">
-        <div class="stat-label">Protegido no Smart Vault</div>
+        <div class="stat-label">Valor em Estratégia Based Labs</div>
         <div id="vaultBalance" class="stat-value" style="color: #7c3aed;">0.00 EURC</div>
     </div>
 
     <button id="connectBtn" class="btn-main">CONECTAR CARTEIRA</button>
     
     <div id="dashboard" style="display:none;">
-        <button class="btn-main btn-secondary">DEPOSITAR PARA RENDIMENTO</button>
-        <button class="btn-main" style="background: #38bdf8; color: #000;">EXECUTAR ESTRATÉGIA FX</button>
+        <div class="input-group">
+            <label>Quantia para Depósito (USDC)</label>
+            <input type="number" id="depositAmount" class="amount-input" placeholder="0.00">
+        </div>
+        <button id="depositBtn" class="btn-main btn-secondary">DEPOSITAR NO COFRE (YIELD)</button>
+        <button id="strategyBtn" class="btn-main" style="background: #38bdf8; color: #000;">EXECUTAR REBALANCEAMENTO FX</button>
     </div>
 
-    <div id="status">A aguardar interação...</div>
+    <div id="status">Pronto para iniciar na Arc Testnet.</div>
 </div>
 
 <script>
+    // Endereços Baseados nos Artigos Based Labs / Circle 2026
+    const STABLE_FACTORY = "0x0000006a50a9c9Efae8875266ff222579fC2F449";
+    const TOKEN_FACTORY = "0x0E00009d00d1000069ed00A908e00081F5006008";
+    const USDC_ADDR = "0x3600000000000000000000000000000000000000";
+
     let walletAddress = "";
 
     async function updateBalance(addr) {
         try {
             const provider = new ethers.providers.Web3Provider(window.ethereum);
+            
+            // 1. Saldo de Gas (USDC Nativo - 18 decimais)
             const balance = await provider.getBalance(addr);
             document.getElementById('walletBalance').innerText = parseFloat(ethers.utils.formatEther(balance)).toFixed(2) + " USDC";
-        } catch (e) { console.error(e); }
+            
+            // 2. Aqui simulamos a leitura da posição na Based Labs
+            // No próximo passo, faremos a chamada real ao contrato
+            document.getElementById('vaultBalance').innerText = "0.00 EURC";
+        } catch (e) { 
+            console.error("Erro ao sincronizar:", e); 
+        }
     }
 
     document.getElementById('connectBtn').onclick = async () => {
@@ -70,16 +90,32 @@
                 document.getElementById('connectBtn').style.display = 'none';
                 document.getElementById('dashboard').style.display = 'block';
                 document.getElementById('connBadge').style.display = 'inline-block';
-                document.getElementById('status').innerText = "Sessão Ativa: " + walletAddress.substring(0,12) + "...";
+                document.getElementById('status').innerText = "Tesouraria ligada com sucesso.";
                 
                 await updateBalance(walletAddress);
                 setInterval(() => updateBalance(walletAddress), 10000);
             } catch (err) {
-                document.getElementById('status').innerText = "Erro na ligação.";
+                document.getElementById('status').innerText = "Erro: " + err.message;
             }
         } else {
             alert("Instala a MetaMask!");
         }
+    };
+
+    document.getElementById('depositBtn').onclick = async () => {
+        const amt = document.getElementById('depositAmount').value;
+        if (!amt || amt <= 0) {
+            document.getElementById('status').innerText = "Insira um valor válido.";
+            return;
+        }
+        document.getElementById('status').innerText = `A preparar depósito de ${amt} USDC na Stable Pool Factory...`;
+        
+        // Próximo passo: Inserir aqui a chamada do Smart Contract
+    };
+
+    document.getElementById('strategyBtn').onclick = async () => {
+        document.getElementById('status').innerText = "A calcular melhor taxa de conversão na Arc...";
+        // Próximo passo: Automação FX entre USDC e EURC
     };
 </script>
 
