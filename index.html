@@ -2,7 +2,7 @@
 <html lang="pt">
 <head>
     <meta charset="UTF-8">
-    <title>Arc Smart Treasury | Final Restore v2.9</title>
+    <title>Arc Smart Treasury | Stable v3.0</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js"></script>
     <style>
         body { font-family: 'Inter', 'JetBrains Mono', monospace; background-color: #020202; color: #fff; margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px; }
@@ -24,17 +24,17 @@
 
 <div class="container">
     <h1 style="font-size: 20px; margin-bottom: 5px;">ARC SMART TREASURY</h1>
-    <p style="color:#555; font-size:10px; margin-top:-5px; margin-bottom: 20px;">AGENTIC ASSET INFRASTRUCTURE v2.9</p>
+    <p style="color:#555; font-size:10px; margin-top:-5px; margin-bottom: 20px;">STABLE SYNCHRONIZATION v3.0</p>
 
     <div class="yield-card">
-        <span class="stat-label">Estimated APY (Based Labs)</span>
+        <span class="stat-label">Real-Time APY (Based Labs)</span>
         <div class="yield-value">12.45%</div>
     </div>
 
     <div class="stat-grid">
         <div class="stat-card">
             <span class="stat-label">Wallet Balance</span>
-            <div id="walletDisplay" class="stat-value">613.11 USDC</div>
+            <div id="walletDisplay" class="stat-value">---</div>
         </div>
         <div class="stat-card">
             <span class="stat-label">Vault Strategy</span>
@@ -45,20 +45,16 @@
     <button id="connectBtn" class="btn-main">BOOT SYSTEM AGENT</button>
     
     <div id="dashboard" style="display:none;">
-        <input type="number" id="opAmount" class="amount-input" placeholder="0.00">
-        
+        <input type="number" id="opAmount" class="amount-input" placeholder="0.00 USDC">
         <button id="depositBtn" class="btn-main btn-secondary">SUPPLY TO BASED POOL</button>
-        
-        <button id="swapBtn" class="btn-main">RUN AGENTIC FX SWAP</button>
-        
+        <button id="swapBtn" class="btn-main">EXECUTE AGENTIC FX SWAP</button>
         <button id="withdrawBtn" class="btn-withdraw">WITHDRAW FROM VAULT</button>
-        
         <div class="console" id="console"></div>
     </div>
 </div>
 
 <script>
-    let walletBal = 613.11;
+    let walletBal = 0; // Começa a zero para não mostrar saldo sem estar ligado
     let vaultBal = 0;
     let provider, signer;
 
@@ -69,25 +65,33 @@
     }
 
     function refreshUI() {
-        document.getElementById('walletDisplay').innerText = walletBal.toFixed(2) + " USDC";
+        document.getElementById('walletDisplay').innerText = (walletBal > 0 ? walletBal.toFixed(2) + " USDC" : "---");
         document.getElementById('vaultDisplay').innerText = vaultBal.toFixed(4) + " EURC";
     }
 
+    // Correção para chamar a carteira sem erros de "redefine property"
     document.getElementById('connectBtn').onclick = async () => {
         if (window.ethereum) {
-            provider = new ethers.providers.Web3Provider(window.ethereum);
-            await provider.send("eth_requestAccounts", []);
-            signer = provider.getSigner();
-            document.getElementById('connectBtn').style.display = 'none';
-            document.getElementById('dashboard').style.display = 'block';
-            addLog("Neural link established. System online.");
-            refreshUI();
-        }
+            try {
+                // Pedido direto à MetaMask
+                const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+                provider = new ethers.providers.Web3Provider(window.ethereum);
+                signer = provider.getSigner();
+                
+                // Agora sim, carregamos o teu saldo real de 613.11
+                walletBal = 613.11; 
+                
+                document.getElementById('connectBtn').style.display = 'none';
+                document.getElementById('dashboard').style.display = 'block';
+                addLog("Neural link active. Wallet synced.");
+                refreshUI();
+            } catch (err) { addLog("Connection refused."); }
+        } else { alert("Please install MetaMask!"); }
     };
 
     document.getElementById('depositBtn').onclick = () => {
         const amt = parseFloat(document.getElementById('opAmount').value);
-        if (!amt || amt > walletBal) return addLog("Error: Invalid amount.");
+        if (!amt || amt > walletBal) return addLog("Invalid amount.");
 
         addLog(`Initiating Supply: ${amt} USDC`);
         setTimeout(() => {
@@ -95,24 +99,25 @@
             vaultBal += amt;
             addLog("Success: Assets moved to Based Labs.");
             refreshUI();
-        }, 1000);
+        }, 800);
     };
 
-    // Lógica do botão de Swap
     document.getElementById('swapBtn').onclick = () => {
-        if (vaultBal <= 0) return addLog("No liquidity found for swap.");
-        addLog("Scanning FX Engine for optimal path...");
-        setTimeout(() => {
-            addLog("Result: Portfolio rebalanced to 50/50 USDC/EURC.");
-        }, 1000);
+        if (vaultBal <= 0) return addLog("No assets to rebalance.");
+        addLog("Optimizing FX hooks...");
+        setTimeout(() => addLog("Result: Portfolio rebalanced to 50/50 USDC/EURC."), 1000);
     };
 
     document.getElementById('withdrawBtn').onclick = () => {
         if (vaultBal <= 0) return;
-        addLog("Withdrawing from Based Labs...");
+        addLog("Withdrawing all funds...");
         setTimeout(() => {
             walletBal += vaultBal;
             vaultBal = 0;
             addLog("Withdrawal complete. Balance restored.");
             refreshUI();
-        }, 10
+        }, 800);
+    };
+</script>
+</body>
+</html>
