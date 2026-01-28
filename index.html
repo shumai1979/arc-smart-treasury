@@ -2,10 +2,10 @@
 <html lang="pt">
 <head>
     <meta charset="UTF-8">
-    <title>Arc Smart Treasury | Real Asset Flow</title>
+    <title>Arc Smart Treasury | Stable v3.0</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js"></script>
     <style>
-        /* CSS v3.0 INTEGRALMENTE MANTIDO */
+        /* CSS v3.0 INTEGRALMENTE PRESERVADO */
         body { font-family: 'Inter', 'JetBrains Mono', monospace; background-color: #020202; color: #fff; margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px; }
         .container { width: 100%; max-width: 500px; padding: 30px; border: 1px solid #111; border-radius: 20px; background: #050505; box-shadow: 0 0 40px rgba(56, 189, 248, 0.05); }
         .yield-card { background: linear-gradient(135deg, #0a0a0a 0%, #111 100%); padding: 20px; border-radius: 12px; border: 1px solid #1a1a1a; margin-bottom: 20px; text-align: center; }
@@ -25,7 +25,7 @@
 
 <div class="container">
     <h1 style="font-size: 20px; margin-bottom: 5px;">ARC SMART TREASURY</h1>
-    <p style="color:#555; font-size:10px; margin-top:-5px; margin-bottom: 20px;">REAL SYNC v4.6</p>
+    <p style="color:#555; font-size:10px; margin-top:-5px; margin-bottom: 20px;">DEEP SYNC v4.7</p>
 
     <div class="yield-card">
         <span class="stat-label">Real-Time APY (Based Labs)</span>
@@ -55,11 +55,11 @@
 </div>
 
 <script>
+    // Endereços Reais Validados por ti
     const USDC_ADDRESS = "0x3600000000000000000000000000000000000000"; 
     const VAULT_ADDRESS = "0x0000006a50a9c9efae8875266fb8538740f90e66";
 
     let walletBal = 0; 
-    let vaultBal = 0;
     let provider, signer, userAddress;
 
     function addLog(msg) {
@@ -68,19 +68,18 @@
         c.scrollTop = c.scrollHeight;
     }
 
-    // SINCRONIZAÇÃO REAL COM A BLOCKCHAIN
+    // Função que lê a realidade da tua Rabby Wallet
     async function updateRealBalance() {
         try {
             const erc20Abi = ["function balanceOf(address owner) view returns (uint256)"];
             const usdcContract = new ethers.Contract(USDC_ADDRESS, erc20Abi, provider);
             const balance = await usdcContract.balanceOf(userAddress);
             
-            // Formatamos para 6 decimais (padrão USDC)
             walletBal = parseFloat(ethers.utils.formatUnits(balance, 6));
-            
-            document.getElementById('walletDisplay').innerText = walletBal.toLocaleString('en-US', {minimumFractionDigits: 2}) + " USDC";
+            document.getElementById('walletDisplay').innerText = walletBal.toFixed(4) + " USDC";
+            addLog(`On-chain balance synced: ${walletBal.toFixed(4)} USDC`);
         } catch (e) {
-            addLog("Error syncing balance from ArcScan.");
+            addLog("Sync error: Could not fetch real balance.");
         }
     }
 
@@ -94,11 +93,11 @@
                 
                 document.getElementById('connectBtn').style.display = 'none';
                 document.getElementById('dashboard').style.display = 'block';
-                addLog("Neural link active. Fetching on-chain data...");
+                addLog("Neural link active. Wallet synced.");
                 
                 await updateRealBalance(); 
             } catch (err) { addLog("Connection refused."); }
-        } else { alert("Please install MetaMask/Rabby!"); }
+        } else { alert("Please install Rabby/MetaMask!"); }
     };
 
     document.getElementById('depositBtn').onclick = async () => {
@@ -106,41 +105,40 @@
         if (!amt || parseFloat(amt) <= 0 || parseFloat(amt) > walletBal) return addLog("Invalid amount.");
 
         try {
-            const erc20Abi = ["function approve(address spender, uint256 amount) public returns (bool)"];
+            // Definição das ABIs para operação real
+            const usdcAbi = ["function approve(address spender, uint256 amount) public returns (bool)"];
             const vaultAbi = ["function deposit(uint256 amount) public returns (bool)"];
             
-            const usdcContract = new ethers.Contract(USDC_ADDRESS, erc20Abi, signer);
-            const vaultContract = new ethers.Contract(VAULT_ADDRESS, vaultAbi, signer);
+            const usdc = new ethers.Contract(USDC_ADDRESS, usdcAbi, signer);
+            const vault = new ethers.Contract(VAULT_ADDRESS, vaultAbi, signer);
+            const amountWei = ethers.utils.parseUnits(amt, 6);
 
-            // IMPORTANTE: Converte para 6 decimais para o contrato entender o valor real
-            const amountWei = ethers.utils.parseUnits(amt, 6); 
+            addLog(`Step 1: Approving ${amt} USDC...`);
+            const tx1 = await usdc.approve(VAULT_ADDRESS, amountWei);
+            addLog("Approval pending on ARC Network...");
+            await tx1.wait();
+            addLog("Success: USDC Approved.");
 
-            addLog(`Step 1: Requesting approval for ${amt} USDC...`);
-            const approveTx = await usdcContract.approve(VAULT_ADDRESS, amountWei);
-            await approveTx.wait();
-            addLog("Success: USDC access granted.");
+            addLog(`Step 2: Executing Real Deposit...`);
+            const tx2 = await vault.deposit(amountWei);
+            addLog("Deposit pending on ARC Network...");
+            await tx2.wait();
 
-            addLog(`Step 2: Sending ${amt} USDC to Based Pool...`);
-            // Passamos o valor real (amountWei) na função de depósito
-            const depositTx = await vaultContract.deposit(amountWei);
-            addLog("Transaction pending on ARC Network...");
-            await depositTx.wait();
-
-            addLog("Success Total! Refreshing on-chain balances...");
+            addLog("Success Total! Refreshing balances...");
             
-            // Pequeno delay para a blockchain atualizar o estado interno
+            // Aguardamos 3 segundos para a blockchain consolidar a mudança
             setTimeout(async () => {
                 await updateRealBalance();
-                addLog("Portfolio synchronized.");
-            }, 1500);
+                addLog("Assets locked in Yield Strategy.");
+            }, 3000);
             
         } catch (err) {
             console.error(err);
-            addLog(`Error: Transaction failed or rejected.`);
+            addLog(`Error: ${err.reason || "Transaction failed"}`);
         }
     };
 
-    // Mantidas como simulação para focar no fluxo do depósito
+    // Mantidas as lógicas visuais para Swap e Withdraw conforme solicitado
     document.getElementById('swapBtn').onclick = () => { addLog("Optimizing FX hooks..."); };
     document.getElementById('withdrawBtn').onclick = () => { addLog("Initiating vault withdrawal..."); };
 </script>
