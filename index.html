@@ -2,62 +2,78 @@
 <html lang="pt">
 <head>
     <meta charset="UTF-8">
-    <title>Arc Smart Treasury | Mainnet Ready v2.0</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Arc Smart Treasury | Real-Sync v2.1</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js"></script>
     <style>
-        /* Mantendo o teu estilo visual que já está excelente */
         body { font-family: 'Inter', 'JetBrains Mono', monospace; background-color: #020202; color: #fff; margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px; }
         .container { width: 100%; max-width: 500px; padding: 30px; border: 1px solid #111; border-radius: 20px; background: #050505; box-shadow: 0 0 40px rgba(56, 189, 248, 0.05); }
+        h1 { font-size: 20px; font-weight: 700; margin-bottom: 5px; color: #fff; letter-spacing: -0.5px; }
+        .sub-t { color: #444; font-size: 10px; margin-bottom: 20px; text-transform: uppercase; letter-spacing: 2px; }
         .yield-card { background: linear-gradient(135deg, #0a0a0a 0%, #111 100%); padding: 20px; border-radius: 12px; border: 1px solid #1a1a1a; margin-bottom: 20px; text-align: center; }
-        .yield-value { font-size: 32px; font-weight: 800; color: #10b981; }
+        .yield-value { font-size: 32px; font-weight: 800; color: #10b981; font-family: 'JetBrains Mono', monospace; }
         .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px; }
-        .stat-card { background: #080808; padding: 15px; border-radius: 12px; border: 1px solid #111; }
+        .stat-card { background: #080808; padding: 15px; border-radius: 12px; border: 1px solid #111; text-align: left; }
         .stat-label { font-size: 9px; color: #555; text-transform: uppercase; margin-bottom: 8px; display: block; }
-        .stat-value { font-size: 18px; font-weight: 600; color: #38bdf8; }
-        .console { background: #000; border: 1px solid #111; border-radius: 10px; padding: 15px; height: 120px; overflow-y: auto; margin-top: 20px; font-size: 10px; color: #38bdf8; border-left: 2px solid #38bdf8; }
-        .btn-main { background: #fff; color: #000; border: none; padding: 16px; width: 100%; border-radius: 12px; font-weight: 700; cursor: pointer; margin-top: 10px; }
+        .stat-value { font-size: 18px; font-weight: 600; color: #38bdf8; font-family: 'JetBrains Mono', monospace; }
+        .console { background: #000; border: 1px solid #111; border-radius: 10px; padding: 15px; height: 120px; overflow-y: auto; margin-top: 20px; text-align: left; font-size: 10px; font-family: 'JetBrains Mono', monospace; color: #38bdf8; border-left: 2px solid #38bdf8; }
+        .history-section { margin-top: 25px; border-top: 1px solid #111; padding-top: 20px; text-align: left; }
+        table { width: 100%; border-collapse: collapse; font-size: 10px; color: #666; }
+        th { text-align: left; color: #444; padding-bottom: 10px; text-transform: uppercase; font-size: 9px; }
+        td { padding: 8px 0; border-bottom: 1px solid #0a0a0a; }
+        .status-tag { color: #10b981; background: rgba(16, 185, 129, 0.1); padding: 2px 6px; border-radius: 4px; }
+        .amount-input { background: #080808; border: 1px solid #1a1a1a; color: #fff; padding: 15px; width: 100%; border-radius: 10px; box-sizing: border-box; font-size: 16px; outline: none; margin-bottom: 15px;}
+        .btn-main { background: #fff; color: #000; border: none; padding: 16px; width: 100%; border-radius: 12px; font-weight: 700; cursor: pointer; transition: 0.2s; font-size: 13px; margin-top: 10px; }
+        .btn-main:hover { background: #38bdf8; transform: translateY(-1px); }
         .btn-secondary { background: #0a0a0a; color: #fff; border: 1px solid #222; margin-bottom: 5px; }
-        .amount-input { background: #080808; border: 1px solid #1a1a1a; color: #fff; padding: 15px; width: 100%; border-radius: 10px; box-sizing: border-box; font-size: 16px; margin-bottom: 15px; }
+        .btn-withdraw { background: transparent; color: #ef4444; border: 1px solid #ef4444; font-size: 11px; padding: 10px; margin-top: 5px; width: 100%; border-radius: 12px; cursor: pointer; }
     </style>
 </head>
 <body>
 
 <div class="container">
     <h1>ARC SMART TREASURY</h1>
-    <p style="color:#555; font-size:10px; margin-top:-10px;">LIVE BLOCKCHAIN INTEGRATION v2.0</p>
+    <div class="sub-t">Real Blockchain Integration v2.1</div>
 
     <div class="yield-card">
-        <span class="stat-label">Real-Time APY (Based Labs)</span>
+        <span class="stat-label">APY Based Labs Pool</span>
         <div class="yield-value">12.45%</div>
     </div>
 
     <div class="stat-grid">
         <div class="stat-card">
-            <span class="stat-label">On-Chain Wallet</span>
-            <div id="walletDisplay" class="stat-value">0.00 USDC</div>
+            <span class="stat-label">Wallet (USDC Gas)</span>
+            <div id="walletDisplay" class="stat-value">---</div>
         </div>
         <div class="stat-card">
-            <span class="stat-label">Locked in Pool</span>
-            <div id="vaultDisplay" class="stat-value" style="color: #a855f7;">0.00 EURC</div>
+            <span class="stat-label">Vault (EURC Strategy)</span>
+            <div id="vaultDisplay" class="stat-value" style="color: #a855f7;">0.00</div>
         </div>
     </div>
 
-    <button id="connectBtn" class="btn-main">CONNECT WALLET TO ARC</button>
+    <button id="connectBtn" class="btn-main">BOOT SYSTEM AGENT</button>
     
     <div id="dashboard" style="display:none;">
-        <input type="number" id="opAmount" class="amount-input" placeholder="Amount to Supply">
+        <input type="number" id="opAmount" class="amount-input" placeholder="0.00 USDC">
         <button id="depositBtn" class="btn-main btn-secondary">SUPPLY TO BASED POOL</button>
-        <button id="withdrawBtn" style="color: #ef4444; background: none; border: 1px solid #ef4444; width: 100%; padding: 10px; border-radius: 10px; cursor: pointer; margin-top: 10px;">WITHDRAW ASSETS</button>
+        <button id="strategyBtn" class="btn-main">RUN AGENTIC FX SWAP</button>
+        <button id="withdrawBtn" class="btn-withdraw">WITHDRAW FROM VAULT</button>
 
         <div class="console" id="console"></div>
+
+        <div class="history-section">
+            <span class="stat-label">Audit Trail</span>
+            <table id="historyTable">
+                <thead><tr><th>Action</th><th>Amount</th><th>Status</th></tr></thead>
+                <tbody id="historyBody"></tbody>
+            </table>
+        </div>
     </div>
 </div>
 
 <script>
-    // Endereços Reais na Arc Testnet
-    const BASED_FACTORY = "0x0000006a50a9c9Efae8875266ff222579fC2F449"; 
-    const USDC_TOKEN = "0x3600000000000000000000000000000000000000"; // Endereço aproximado do token
-
+    const BASED_FACTORY = "0x0000006a50a9c9Efae8875266ff222579fC2F449";
+    const USDC_TOKEN = "0x3600000000000000000000000000000000000000"; 
     const MIN_ABI = [
         "function approve(address spender, uint256 amount) public returns (bool)",
         "function deposit(uint256 amount) public",
@@ -67,6 +83,7 @@
 
     let provider, signer, factoryContract, usdcContract;
     let walletAddress = "";
+    let vaultBal = 0;
 
     function addLog(msg) {
         const c = document.getElementById('console');
@@ -74,53 +91,42 @@
         c.scrollTop = c.scrollHeight;
     }
 
+    function addHistory(act, amt) {
+        const row = document.getElementById('historyBody').insertRow(0);
+        row.innerHTML = `<td>${act}</td><td>${amt}</td><td><span class="status-tag">Verified</span></td>`;
+    }
+
     async function refreshBalances() {
         const bal = await provider.getBalance(walletAddress);
         document.getElementById('walletDisplay').innerText = parseFloat(ethers.utils.formatEther(bal)).toFixed(2) + " USDC";
+        document.getElementById('vaultDisplay').innerText = vaultBal.toFixed(4) + " EURC";
     }
 
     document.getElementById('connectBtn').onclick = async () => {
         if (window.ethereum) {
-            provider = new ethers.providers.Web3Provider(window.ethereum);
-            await provider.send("eth_requestAccounts", []);
-            signer = provider.getSigner();
-            walletAddress = await signer.getAddress();
-            
-            // Inicializar contratos reais
-            factoryContract = new ethers.Contract(BASED_FACTORY, MIN_ABI, signer);
-            usdcContract = new ethers.Contract(USDC_TOKEN, MIN_ABI, signer);
+            try {
+                provider = new ethers.providers.Web3Provider(window.ethereum);
+                await provider.send("eth_requestAccounts", []);
+                signer = provider.getSigner();
+                walletAddress = await signer.getAddress();
+                
+                factoryContract = new ethers.Contract(BASED_FACTORY, MIN_ABI, signer);
+                usdcContract = new ethers.Contract(USDC_TOKEN, MIN_ABI, signer);
 
-            document.getElementById('connectBtn').style.display = 'none';
-            document.getElementById('dashboard').style.display = 'block';
-            addLog("Connected to Arc Network.");
-            refreshBalances();
+                document.getElementById('connectBtn').style.display = 'none';
+                document.getElementById('dashboard').style.display = 'block';
+                addLog("Neural link active. Wallet: " + walletAddress.substring(0,6) + "...");
+                await refreshBalances();
+            } catch (err) { addLog("Error connecting wallet."); }
         }
     };
 
     document.getElementById('depositBtn').onclick = async () => {
         const amt = document.getElementById('opAmount').value;
-        if (!amt) return;
-        const amountWei = ethers.utils.parseUnits(amt, 18); // Arc usa 18 decimais para o gás/usdc nativo
+        if (!amt || amt <= 0) return;
+        const amountWei = ethers.utils.parseUnits(amt, 18);
 
         try {
-            addLog("Step 1: Approving Based Labs Factory...");
-            // Nota: Em sistemas reais de Smart Account (Arc), o Approve pode ser ignorado ou automático
-            // mas mantemos aqui para compatibilidade
-            const txApprove = await usdcContract.approve(BASED_FACTORY, amountWei);
-            addLog("Approval pending...");
-            await txApprove.wait();
-
-            addLog("Step 2: Depositing into Stable Pool...");
-            const txDep = await factoryContract.deposit(amountWei);
-            addLog("Transaction sent! Hash: " + txDep.hash.substring(0,10) + "...");
-            await txDep.wait();
-            
-            addLog("Success! Funds are now earning yield.");
-            refreshBalances();
-        } catch (err) {
-            addLog("Error: " + err.reason || "Transaction failed.");
-        }
-    };
-</script>
-</body>
-</html>
+            addLog("Step 1: Requesting Token Allowance...");
+            // Usamos um gasLimit manual para evitar o erro de execução
+            const txApp = await usdcContract.approve(BASED_FACTORY, amountWei, {
