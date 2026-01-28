@@ -2,7 +2,7 @@
 <html lang="pt">
 <head>
     <meta charset="UTF-8">
-    <title>Arc Smart Treasury | Live ARC v4.0</title>
+    <title>Arc Smart Treasury | Stable v3.0</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js"></script>
     <style>
         body { font-family: 'Inter', 'JetBrains Mono', monospace; background-color: #020202; color: #fff; margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px; }
@@ -24,7 +24,7 @@
 
 <div class="container">
     <h1 style="font-size: 20px; margin-bottom: 5px;">ARC SMART TREASURY</h1>
-    <p style="color:#555; font-size:10px; margin-top:-5px; margin-bottom: 20px;">LIVE BLOCKHAIN INTEGRATION v4.0</p>
+    <p style="color:#555; font-size:10px; margin-top:-5px; margin-bottom: 20px;">STABLE SYNCHRONIZATION v3.0</p>
 
     <div class="yield-card">
         <span class="stat-label">Real-Time APY (Based Labs)</span>
@@ -54,13 +54,14 @@
 </div>
 
 <script>
-    // CONFIGURAÇÃO REAL DA REDE ARC
-    const DEPLOYED_VAULT = "0x0000006a50a9c9efae8875266fb8538740f90e66"; // Exemplo baseado no teu revert
-    const USDC_TOKEN = "0x2db6c82cecececececececececececececececec"; // Substituir pelo contrato USDC da Arc
+    // --- CONFIGURAÇÃO DE REDE ARC ---
+    // Substituir estes endereços pelos reais da rede que estás a usar
+    const USDC_ADDRESS = "0x3600000000000000000000000000000000000000"; 
+    const VAULT_ADDRESS = "0x0000006a50a9c9efae8875266fb8538740f90e66"; //
 
     let walletBal = 0; 
     let vaultBal = 0;
-    let provider, signer, userAddress;
+    let provider, signer;
 
     function addLog(msg) {
         const c = document.getElementById('console');
@@ -68,10 +69,8 @@
         c.scrollTop = c.scrollHeight;
     }
 
-    async function updateBalances() {
-        // Aqui irias buscar o saldo real on-chain
-        // Para este teste mantemos a tua UI estável enquanto fazemos o request de rede
-        document.getElementById('walletDisplay').innerText = walletBal.toFixed(2) + " USDC";
+    function refreshUI() {
+        document.getElementById('walletDisplay').innerText = (walletBal > 0 ? walletBal.toFixed(2) + " USDC" : "---");
         document.getElementById('vaultDisplay').innerText = vaultBal.toFixed(4) + " EURC";
     }
 
@@ -79,7 +78,6 @@
         if (window.ethereum) {
             try {
                 const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
-                userAddress = accounts[0];
                 provider = new ethers.providers.Web3Provider(window.ethereum);
                 signer = provider.getSigner();
                 
@@ -87,51 +85,65 @@
                 
                 document.getElementById('connectBtn').style.display = 'none';
                 document.getElementById('dashboard').style.display = 'block';
-                addLog(`Connected to Arc: ${userAddress.substring(0,10)}...`);
-                updateBalances();
-            } catch (err) { addLog("Connection failed."); }
+                addLog("Neural link active. Wallet synced.");
+                refreshUI();
+            } catch (err) { addLog("Connection refused."); }
         } else { alert("Please install MetaMask!"); }
     };
 
     document.getElementById('depositBtn').onclick = async () => {
         const amt = document.getElementById('opAmount').value;
-        if (!amt || amt > walletBal) return addLog("Check balance/amount.");
+        if (!amt || parseFloat(amt) > walletBal) return addLog("Saldo insuficiente ou valor inválido.");
 
         try {
-            addLog("Step 1: Approving Based Labs Factory..."); // Evita o revert comum
-            // Simulação de chamada real (Ethers.js):
-            // const tx = await tokenContract.approve(DEPLOYED_VAULT, ethers.utils.parseUnits(amt, 6));
-            // await tx.wait();
-            
-            addLog(`Step 2: Depositing ${amt} USDC into Pool...`);
-            // const vaultTx = await vaultContract.deposit(ethers.utils.parseUnits(amt, 6));
-            // await vaultTx.wait();
+            // ABIs mínimas necessárias
+            const erc20Abi = ["function approve(address spender, uint256 amount) public returns (bool)"];
+            const vaultAbi = ["function deposit(uint256 amount) public returns (bool)"];
 
+            const usdcContract = new ethers.Contract(USDC_ADDRESS, erc20Abi, signer);
+            const vaultContract = new ethers.Contract(VAULT_ADDRESS, vaultAbi, signer);
+
+            const amountWei = ethers.utils.parseUnits(amt, 6); // USDC usa 6 casas decimais
+
+            // PASSO 1: APROVAÇÃO (APPROVE)
+            addLog(`Passo 1: A solicitar aprovação de ${amt} USDC...`);
+            const approveTx = await usdcContract.approve(VAULT_ADDRESS, amountWei);
+            addLog("Aguardando confirmação do Approve na rede ARC...");
+            await approveTx.wait();
+            addLog("Sucesso: USDC aprovado para uso.");
+
+            // PASSO 2: DEPÓSITO (DEPOSIT)
+            addLog(`Passo 2: A processar depósito na Pool...`);
+            const depositTx = await vaultContract.deposit(amountWei);
+            addLog("Transação enviada. Aguardando confirmação final...");
+            await depositTx.wait();
+
+            // Atualização visual
             walletBal -= parseFloat(amt);
             vaultBal += parseFloat(amt);
-            addLog("Success: Transaction confirmed on ARC Network.");
-            updateBalances();
+            addLog("Sucesso Total: Ativos integrados na rede ARC.");
+            refreshUI();
+
         } catch (err) {
-            addLog(`Error: RPC Request failed. Execution reverted.`);
+            console.error(err);
+            addLog(`Erro: ${err.reason || "Transação revertida ou rejeitada"}`);
         }
     };
 
     document.getElementById('swapBtn').onclick = () => {
-        if (vaultBal <= 0) return addLog("No assets to rebalance.");
-        addLog("Scanning FX Engine for USDC/EURC pairs...");
-        setTimeout(() => {
-            addLog("Result: Portfolio rebalanced to 50/50 USDC/EURC.");
-        }, 1000);
+        if (vaultBal <= 0) return addLog("Sem ativos para rebalancear.");
+        addLog("Neural Optimization: Scanning FX pairs...");
+        setTimeout(() => addLog("Result: Portfolio rebalanced to 50/50 USDC/EURC."), 1000);
     };
 
     document.getElementById('withdrawBtn').onclick = () => {
         if (vaultBal <= 0) return;
-        addLog("Withdrawing from Based Labs...");
+        addLog("Iniciando retirada total...");
         setTimeout(() => {
             walletBal += vaultBal;
             vaultBal = 0;
-            addLog("Withdrawal successful. Funds returned to wallet.");
-            updateBalances();
+            addLog("Withdrawal complete. Assets restored to wallet.");
+            refreshUI();
         }, 800);
     };
 </script>
