@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Arc Smart Treasury | Real-Sync v1.8</title>
+    <title>Arc Smart Treasury | Fixed Sync v1.9</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js"></script>
     <style>
         body { font-family: 'Inter', 'JetBrains Mono', monospace; background-color: #020202; color: #fff; margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px; }
@@ -26,13 +26,14 @@
         .btn-main { background: #fff; color: #000; border: none; padding: 16px; width: 100%; border-radius: 12px; font-weight: 700; cursor: pointer; transition: 0.2s; font-size: 13px; margin-top: 10px; }
         .btn-main:hover { background: #38bdf8; transform: translateY(-1px); }
         .btn-secondary { background: #0a0a0a; color: #fff; border: 1px solid #222; margin-bottom: 5px; }
+        .btn-withdraw { background: transparent; color: #ef4444; border: 1px solid #ef4444; font-size: 11px; padding: 10px; margin-top: 5px; width: 100%; border-radius: 12px; cursor: pointer; }
     </style>
 </head>
 <body>
 
 <div class="container">
     <h1>ARC SMART TREASURY</h1>
-    <div class="sub-t">Real-Time Asset Sync v1.8</div>
+    <div class="sub-t">Fixed Balance Synchronization v1.9</div>
 
     <div class="yield-card">
         <span class="stat-label">APY Based Labs Pool</span>
@@ -42,7 +43,7 @@
     <div class="stat-grid">
         <div class="stat-card">
             <span class="stat-label">Wallet Balance</span>
-            <div id="walletDisplay" class="stat-value">613.11</div>
+            <div id="walletDisplay" class="stat-value">---</div>
         </div>
         <div class="stat-card">
             <span class="stat-label">Vault Strategy</span>
@@ -56,6 +57,7 @@
         <input type="number" id="opAmount" class="amount-input" placeholder="0.00 USDC">
         <button id="depositBtn" class="btn-main btn-secondary">SUPPLY TO BASED POOL</button>
         <button id="strategyBtn" class="btn-main">RUN AGENTIC FX SWAP</button>
+        <button id="withdrawBtn" class="btn-withdraw">WITHDRAW FROM VAULT</button>
 
         <div class="console" id="console"></div>
 
@@ -70,8 +72,9 @@
 </div>
 
 <script>
-    let walletBal = 613.11; // Iniciamos com o teu valor real
+    let walletBal = 0;
     let vaultBal = 0;
+    let walletAddress = "";
 
     function addLog(msg) {
         const c = document.getElementById('console');
@@ -89,42 +92,72 @@
         document.getElementById('vaultDisplay').innerText = vaultBal.toFixed(2) + " EURC";
     }
 
-    document.getElementById('connectBtn').onclick = () => {
-        document.getElementById('connectBtn').style.display = 'none';
-        document.getElementById('dashboard').style.display = 'block';
-        addLog("Neural link active. Balances synced.");
-        refreshUI();
+    // Função para ligar à carteira real
+    document.getElementById('connectBtn').onclick = async () => {
+        if (typeof window.ethereum !== 'undefined') {
+            try {
+                const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+                walletAddress = accounts[0];
+                
+                const provider = new ethers.providers.Web3Provider(window.ethereum);
+                const balance = await provider.getBalance(walletAddress);
+                walletBal = parseFloat(ethers.utils.formatEther(balance)); // Lê os 613.11 reais
+
+                document.getElementById('connectBtn').style.display = 'none';
+                document.getElementById('dashboard').style.display = 'block';
+                addLog("Neural link established. Wallet: " + walletAddress.substring(0,6) + "...");
+                refreshUI();
+            } catch (err) {
+                addLog("Error: Connection refused.");
+            }
+        } else {
+            alert("MetaMask não detetada!");
+        }
     };
 
     document.getElementById('depositBtn').onclick = () => {
         const amt = parseFloat(document.getElementById('opAmount').value);
+        if (!amt || amt <= 0) return;
         if (amt > walletBal) {
-            addLog("Critical: Insufficient wallet funds.");
+            addLog("Critical: Insufficient funds in wallet.");
             return;
         }
-        if (!amt || amt <= 0) return;
 
-        addLog(`Initiating supply: ${amt} USDC`);
-        
-        // Simulação de transação Arc
+        addLog(`Initiating Supply: ${amt} USDC`);
         setTimeout(() => {
-            walletBal -= (amt + 0.01); // Retira o depósito + taxa de gás realística
+            walletBal -= (amt + 0.01); // Subtrai depósito + taxa Arc
             vaultBal += amt;
-            addLog("Success: Assets moved to Vault.");
+            addLog("Success: Funds moved to Based Labs Pool.");
             addHistory("Deposit", amt + " USDC");
             refreshUI();
         }, 1000);
     };
 
-    document.getElementById('strategyBtn').onclick = () => {
-        addLog("Optimizing liquidity hooks...");
+    document.getElementById('withdrawBtn').onclick = () => {
+        if (vaultBal <= 0) {
+            addLog("Vault empty. No funds to withdraw.");
+            return;
+        }
+        const amt = vaultBal;
+        addLog(`Withdrawing all funds: ${amt.toFixed(2)} EURC`);
         setTimeout(() => {
-            addLog("Strategy updated: USDC/EURC balanced.");
-            addHistory("FX Swap", "Optimization");
-        }, 8000);
+            walletBal += amt; // Devolve o dinheiro à carteira
+            vaultBal = 0;
+            addLog("Withdrawal complete. Balance restored.");
+            addHistory("Withdraw", amt.toFixed(2) + " EURC");
+            refreshUI();
+        }, 1000);
     };
 
-    // Rendimento automático (Yield)
+    document.getElementById('strategyBtn').onclick = () => {
+        addLog("Optimizing FX hooks...");
+        setTimeout(() => {
+            addLog("Strategy: Balanced USDC/EURC exposure.");
+            addHistory("FX Swap", "Optimization");
+        }, 1000);
+    };
+
+    // Rendimento automático (Yield simulation)
     setInterval(() => {
         if(vaultBal > 0) {
             vaultBal += 0.0001;
