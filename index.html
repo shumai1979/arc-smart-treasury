@@ -2,10 +2,10 @@
 <html lang="pt">
 <head>
     <meta charset="UTF-8">
-    <title>Arc Smart Treasury | Real-Time Sync</title>
+    <title>Arc Smart Treasury | Real Asset Flow</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js"></script>
     <style>
-        /* CSS TOTALMENTE MANTIDO CONFORME v3.0 */
+        /* CSS v3.0 INTEGRALMENTE MANTIDO */
         body { font-family: 'Inter', 'JetBrains Mono', monospace; background-color: #020202; color: #fff; margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px; }
         .container { width: 100%; max-width: 500px; padding: 30px; border: 1px solid #111; border-radius: 20px; background: #050505; box-shadow: 0 0 40px rgba(56, 189, 248, 0.05); }
         .yield-card { background: linear-gradient(135deg, #0a0a0a 0%, #111 100%); padding: 20px; border-radius: 12px; border: 1px solid #1a1a1a; margin-bottom: 20px; text-align: center; }
@@ -25,7 +25,7 @@
 
 <div class="container">
     <h1 style="font-size: 20px; margin-bottom: 5px;">ARC SMART TREASURY</h1>
-    <p style="color:#555; font-size:10px; margin-top:-5px; margin-bottom: 20px;">STABLE SYNCHRONIZATION v4.5</p>
+    <p style="color:#555; font-size:10px; margin-top:-5px; margin-bottom: 20px;">REAL SYNC v4.6</p>
 
     <div class="yield-card">
         <span class="stat-label">Real-Time APY (Based Labs)</span>
@@ -68,19 +68,19 @@
         c.scrollTop = c.scrollHeight;
     }
 
-    // NOVA FUNÇÃO: LÊ O SALDO REAL DA BLOCKCHAIN
+    // SINCRONIZAÇÃO REAL COM A BLOCKCHAIN
     async function updateRealBalance() {
         try {
             const erc20Abi = ["function balanceOf(address owner) view returns (uint256)"];
             const usdcContract = new ethers.Contract(USDC_ADDRESS, erc20Abi, provider);
             const balance = await usdcContract.balanceOf(userAddress);
             
-            // USDC costuma ter 6 decimais
+            // Formatamos para 6 decimais (padrão USDC)
             walletBal = parseFloat(ethers.utils.formatUnits(balance, 6));
             
             document.getElementById('walletDisplay').innerText = walletBal.toLocaleString('en-US', {minimumFractionDigits: 2}) + " USDC";
         } catch (e) {
-            addLog("Erro ao sincronizar saldo real.");
+            addLog("Error syncing balance from ArcScan.");
         }
     }
 
@@ -94,48 +94,55 @@
                 
                 document.getElementById('connectBtn').style.display = 'none';
                 document.getElementById('dashboard').style.display = 'block';
-                addLog("Neural link active. Sycing with ArcScan...");
+                addLog("Neural link active. Fetching on-chain data...");
                 
-                await updateRealBalance(); // Sincroniza logo ao ligar
+                await updateRealBalance(); 
             } catch (err) { addLog("Connection refused."); }
         } else { alert("Please install MetaMask/Rabby!"); }
     };
 
     document.getElementById('depositBtn').onclick = async () => {
         const amt = document.getElementById('opAmount').value;
-        if (!amt || parseFloat(amt) > walletBal) return addLog("Saldo insuficiente.");
+        if (!amt || parseFloat(amt) <= 0 || parseFloat(amt) > walletBal) return addLog("Invalid amount.");
 
         try {
-            const erc20Abi = [
-                "function approve(address spender, uint256 amount) public returns (bool)",
-                "function balanceOf(address owner) view returns (uint256)"
-            ];
+            const erc20Abi = ["function approve(address spender, uint256 amount) public returns (bool)"];
             const vaultAbi = ["function deposit(uint256 amount) public returns (bool)"];
             
             const usdcContract = new ethers.Contract(USDC_ADDRESS, erc20Abi, signer);
             const vaultContract = new ethers.Contract(VAULT_ADDRESS, vaultAbi, signer);
-            const amountWei = ethers.utils.parseUnits(amt, 6);
 
-            addLog(`Passo 1: A solicitar aprovação...`);
+            // IMPORTANTE: Converte para 6 decimais para o contrato entender o valor real
+            const amountWei = ethers.utils.parseUnits(amt, 6); 
+
+            addLog(`Step 1: Requesting approval for ${amt} USDC...`);
             const approveTx = await usdcContract.approve(VAULT_ADDRESS, amountWei);
             await approveTx.wait();
-            addLog("Sucesso: USDC aprovado.");
+            addLog("Success: USDC access granted.");
 
-            addLog(`Passo 2: A processar depósito...`);
+            addLog(`Step 2: Sending ${amt} USDC to Based Pool...`);
+            // Passamos o valor real (amountWei) na função de depósito
             const depositTx = await vaultContract.deposit(amountWei);
+            addLog("Transaction pending on ARC Network...");
             await depositTx.wait();
 
-            addLog("Sucesso Total! A atualizar saldo da carteira...");
-            await updateRealBalance(); // Atualiza o saldo real após a transação
+            addLog("Success Total! Refreshing on-chain balances...");
+            
+            // Pequeno delay para a blockchain atualizar o estado interno
+            setTimeout(async () => {
+                await updateRealBalance();
+                addLog("Portfolio synchronized.");
+            }, 1500);
             
         } catch (err) {
-            addLog(`Erro: ${err.reason || "Transação rejeitada"}`);
+            console.error(err);
+            addLog(`Error: Transaction failed or rejected.`);
         }
     };
 
-    // Mantemos as simulações para as outras funções para não quebrar o fluxo visual
-    document.getElementById('swapBtn').onclick = () => { addLog("Neural Optimization: Scanning FX pairs..."); };
-    document.getElementById('withdrawBtn').onclick = () => { addLog("Iniciando retirada total..."); };
+    // Mantidas como simulação para focar no fluxo do depósito
+    document.getElementById('swapBtn').onclick = () => { addLog("Optimizing FX hooks..."); };
+    document.getElementById('withdrawBtn').onclick = () => { addLog("Initiating vault withdrawal..."); };
 </script>
 </body>
 </html>
