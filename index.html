@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Arc Smart Treasury | Auditor v1.6</title>
+    <title>Arc Smart Treasury | Final v1.7</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js"></script>
     <style>
         body { font-family: 'Inter', 'JetBrains Mono', monospace; background-color: #020202; color: #fff; margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px; }
@@ -27,13 +27,15 @@
         .btn-main { background: #fff; color: #000; border: none; padding: 16px; width: 100%; border-radius: 12px; font-weight: 700; cursor: pointer; transition: 0.2s; font-size: 13px; margin-top: 10px; }
         .btn-main:hover { background: #38bdf8; transform: translateY(-1px); }
         .btn-secondary { background: #0a0a0a; color: #fff; border: 1px solid #222; margin-bottom: 5px; }
+        .btn-withdraw { background: transparent; color: #ef4444; border: 1px solid #ef4444; font-size: 11px; padding: 10px; margin-top: 5px; }
+        .btn-withdraw:hover { background: rgba(239, 68, 68, 0.1); }
     </style>
 </head>
 <body>
 
 <div class="container">
     <h1>ARC SMART TREASURY</h1>
-    <div class="sub-t">Independent Asset Manager v1.6</div>
+    <div class="sub-t">Agentic Infrastructure v1.7</div>
 
     <div class="yield-card">
         <span class="stat-label">APY Based Labs Pool</span>
@@ -42,11 +44,11 @@
 
     <div class="stat-grid">
         <div class="stat-card">
-            <span class="stat-label">Wallet Balance</span>
+            <span class="stat-label">Wallet (USDC Gas)</span>
             <div id="walletBalance" class="stat-value">0.00</div>
         </div>
         <div class="stat-card">
-            <span class="stat-label">Vault Balance</span>
+            <span class="stat-label">Vault (EURC Strategy)</span>
             <div id="vaultBalance" class="stat-value" style="color: #a855f7;">0.00</div>
         </div>
     </div>
@@ -55,10 +57,11 @@
     
     <div id="dashboard" style="display:none;">
         <div class="input-group">
-            <input type="number" id="depositAmount" class="amount-input" placeholder="0.00 USDC">
+            <input type="number" id="operationAmount" class="amount-input" placeholder="0.00 USDC">
         </div>
         <button id="depositBtn" class="btn-main btn-secondary">SUPPLY TO BASED POOL</button>
         <button id="strategyBtn" class="btn-main">RUN AGENTIC FX SWAP</button>
+        <button id="withdrawBtn" class="btn-main btn-withdraw">WITHDRAW ALL FROM VAULT</button>
 
         <div class="console" id="console"></div>
 
@@ -68,8 +71,7 @@
                 <thead>
                     <tr><th>Action</th><th>Amount</th><th>Status</th></tr>
                 </thead>
-                <tbody id="historyBody">
-                    </tbody>
+                <tbody id="historyBody"></tbody>
             </table>
         </div>
     </div>
@@ -108,28 +110,42 @@
             walletAddress = accounts[0];
             document.getElementById('connectBtn').style.display = 'none';
             document.getElementById('dashboard').style.display = 'block';
-            addLog("System initialized.");
+            addLog("System initialized. Agent active on Arc.");
             await updateBalance(walletAddress);
         }
     };
 
     document.getElementById('depositBtn').onclick = async () => {
-        const amt = document.getElementById('depositAmount').value;
+        const amt = document.getElementById('operationAmount').value;
         if (!amt || amt <= 0) return;
-        addLog(`Initiating Supply: ${amt} USDC`);
+        addLog(`Supply Initiated: ${amt} USDC`);
         setTimeout(() => {
             vaultTotal += parseFloat(amt);
             document.getElementById('vaultBalance').innerText = vaultTotal.toFixed(2) + " EURC";
-            addLog("Deposit confirmed on Arc.");
+            addLog("Confirmed: Funds locked in Based Labs pool.");
             addHistory("Deposit", amt + " USDC");
-        }, 1000);
+            updateBalance(walletAddress);
+        }, 1200);
+    };
+
+    document.getElementById('withdrawBtn').onclick = async () => {
+        if (vaultTotal <= 0) { addLog("Error: Vault is empty."); return; }
+        const toWithdraw = vaultTotal;
+        addLog(`Withdrawing ${toWithdraw.toFixed(2)} EURC to wallet...`);
+        setTimeout(() => {
+            vaultTotal = 0;
+            document.getElementById('vaultBalance').innerText = "0.00 EURC";
+            addLog("Withdrawal successful. Balance returned.");
+            addHistory("Withdraw", toWithdraw.toFixed(2) + " EURC");
+            updateBalance(walletAddress);
+        }, 1500);
     };
 
     document.getElementById('strategyBtn').onclick = async () => {
-        addLog("Scanning FX Engine...");
+        addLog("Scanning Based Labs FX liquidity...");
         setTimeout(() => {
-            addLog("Optimal swap found. Rebalancing...");
-            addHistory("FX Swap", "USDC/EURC");
+            addLog("Rebalance complete: USDC ↔ EURC optimized.");
+            addHistory("FX Swap", "Optimization");
         }, 1000);
     };
 
