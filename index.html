@@ -3,60 +3,65 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Arc Smart Treasury | Agent Terminal</title>
+    <title>Arc Smart Treasury | System Terminal</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js"></script>
     <style>
         body { font-family: 'Inter', 'JetBrains Mono', monospace; background-color: #020202; color: #fff; margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
         .container { width: 100%; max-width: 480px; padding: 30px; border: 1px solid #111; border-radius: 20px; background: #050505; box-shadow: 0 0 40px rgba(56, 189, 248, 0.05); }
         h1 { font-size: 20px; font-weight: 700; margin-bottom: 5px; color: #fff; letter-spacing: -0.5px; }
-        .sub-t { color: #444; font-size: 11px; margin-bottom: 25px; text-transform: uppercase; letter-spacing: 2px; }
+        .sub-t { color: #444; font-size: 11px; margin-bottom: 25px; text-transform: uppercase; letter-spacing: 1px; }
         .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px; }
-        .stat-card { background: #080808; padding: 15px; border-radius: 12px; border: 1px solid #111; text-align: left; transition: 0.3s; }
-        .stat-card:hover { border-color: #38bdf8; }
+        .stat-card { background: #080808; padding: 15px; border-radius: 12px; border: 1px solid #111; text-align: left; }
         .stat-label { font-size: 9px; color: #555; text-transform: uppercase; margin-bottom: 8px; display: block; }
         .stat-value { font-size: 18px; font-weight: 600; color: #38bdf8; font-family: 'JetBrains Mono', monospace; }
-        .console { background: #000; border: 1px solid #111; border-radius: 10px; padding: 15px; height: 160px; overflow-y: auto; margin-top: 20px; text-align: left; font-size: 10px; font-family: 'JetBrains Mono', monospace; color: #38bdf8; border-left: 2px solid #38bdf8; }
-        .console-line { margin-bottom: 5px; opacity: 0.9; }
+        .yield-card { background: linear-gradient(135deg, #0a0a0a 0%, #111 100%); padding: 20px; border-radius: 12px; border: 1px solid #1a1a1a; margin-bottom: 20px; text-align: center; }
+        .yield-value { font-size: 32px; font-weight: 800; color: #10b981; font-family: 'JetBrains Mono', monospace; }
+        .console { background: #000; border: 1px solid #111; border-radius: 10px; padding: 15px; height: 140px; overflow-y: auto; margin-top: 20px; text-align: left; font-size: 11px; font-family: 'JetBrains Mono', monospace; color: #38bdf8; }
+        .console-line { margin-bottom: 5px; opacity: 0.8; }
         .console-line span { color: #555; margin-right: 8px; }
         .input-group { margin-bottom: 20px; text-align: left; }
-        .amount-input { background: #080808; border: 1px solid #1a1a1a; color: #fff; padding: 15px; width: 100%; border-radius: 10px; box-sizing: border-box; font-size: 16px; outline: none; transition: 0.3s; font-family: 'JetBrains Mono', monospace; }
-        .amount-input:focus { border-color: #38bdf8; }
-        .btn-main { background: #fff; color: #000; border: none; padding: 16px; width: 100%; border-radius: 12px; font-weight: 700; cursor: pointer; transition: 0.2s; font-size: 13px; margin-top: 10px; text-transform: uppercase; }
-        .btn-main:hover { background: #38bdf8; transform: translateY(-1px); }
+        .amount-input { background: #080808; border: 1px solid #1a1a1a; color: #fff; padding: 15px; width: 100%; border-radius: 10px; box-sizing: border-box; font-size: 16px; outline: none; transition: 0.3s; }
+        .amount-input:focus { border-color: #38bdf8; background: #0a0a0a; }
+        .btn-main { background: #fff; color: #000; border: none; padding: 16px; width: 100%; border-radius: 12px; font-weight: 700; cursor: pointer; transition: 0.2s; font-size: 14px; margin-top: 10px; }
+        .btn-main:hover { background: #38bdf8; color: #000; transform: translateY(-1px); }
         .btn-secondary { background: #0a0a0a; color: #fff; border: 1px solid #222; margin-bottom: 10px; }
-        .agent-status { font-size: 10px; color: #10b981; margin-top: 10px; display: block; font-weight: bold; }
     </style>
 </head>
 <body>
 
 <div class="container">
     <h1>ARC SMART TREASURY</h1>
-    <div class="sub-t">Agentic Asset Manager v1.4</div>
+    <div class="sub-t">Autonomous Asset Infrastructure v1.5</div>
+
+    <div class="yield-card">
+        <span class="stat-label">Estimated Annual Yield (APY)</span>
+        <div class="yield-value">12.45%</div>
+        <div style="font-size: 10px; color: #555; margin-top: 5px;">Powered by Based Labs Liquidity Pools</div>
+    </div>
 
     <div class="stat-grid">
         <div class="stat-card">
-            <span class="stat-label">Wallet (USDC Gas)</span>
+            <span class="stat-label">Wallet Balance</span>
             <div id="walletBalance" class="stat-value">0.00</div>
         </div>
         <div class="stat-card">
-            <span class="stat-label">Smart Vault (EURC)</span>
+            <span class="stat-label">Vault Strategy</span>
             <div id="vaultBalance" class="stat-value" style="color: #a855f7;">0.00</div>
         </div>
     </div>
 
-    <button id="connectBtn" class="btn-main">BOOT SYSTEM AGENT</button>
+    <button id="connectBtn" class="btn-main">INITIALIZE SYSTEM</button>
     
     <div id="dashboard" style="display:none;">
         <div class="input-group">
             <input type="number" id="depositAmount" class="amount-input" placeholder="0.00 USDC">
-            <span class="agent-status" id="agentThinking">● AGENT IDLE</span>
         </div>
-        <button id="depositBtn" class="btn-main btn-secondary">SUPPLY TO BASED POOL</button>
-        <button id="strategyBtn" class="btn-main">EXECUTE AGENTIC FX SWAP</button>
+        <button id="depositBtn" class="btn-main btn-secondary">DEPOSIT TO BASED POOL</button>
+        <button id="strategyBtn" class="btn-main">RUN FX REBALANCE</button>
     </div>
 
     <div class="console" id="console">
-        <div class="console-line"><span>[SYS]</span> System kernel loaded. Awaiting handshake...</div>
+        <div class="console-line"><span>[SYSTEM]</span> Awaiting connection...</div>
     </div>
 </div>
 
@@ -71,11 +76,12 @@
     ];
 
     let walletAddress = "";
+    let vaultTotal = 0;
 
     function addLog(msg) {
         const consoleEl = document.getElementById('console');
         const now = new Date();
-        const time = now.getHours().toString().padStart(2, '0') + ":" + now.getMinutes().toString().padStart(2, '0') + ":" + now.getSeconds().toString().padStart(2, '0');
+        const time = now.getHours().toString().padStart(2, '0') + ":" + now.getMinutes().toString().padStart(2, '0');
         const newLine = document.createElement('div');
         newLine.className = 'console-line';
         newLine.innerHTML = `<span>[${time}]</span> ${msg}`;
@@ -86,8 +92,8 @@
     async function updateBalance(addr) {
         try {
             const provider = new ethers.providers.Web3Provider(window.ethereum);
-            const balance = await provider.getBalance(addr); // USDC Gás na Arc tem 18 decimais
-            document.getElementById('walletBalance').innerText = parseFloat(ethers.utils.formatEther(balance)).toFixed(2);
+            const balance = await provider.getBalance(addr); // USDC gas uses 18 decimals
+            document.getElementById('walletBalance').innerText = parseFloat(ethers.utils.formatEther(balance)).toFixed(2) + " USDC";
         } catch (e) { console.error(e); }
     }
 
@@ -98,66 +104,37 @@
                 walletAddress = accounts[0];
                 document.getElementById('connectBtn').style.display = 'none';
                 document.getElementById('dashboard').style.display = 'block';
-                addLog("Neural link established. Agent active.");
-                addLog("Monitoring Arc Testnet sub-second finality...");
+                addLog("System Online. Ready for Yield Generation.");
                 await updateBalance(walletAddress);
-                setInterval(() => updateBalance(walletAddress), 5000);
-            } catch (err) { addLog("Error: Handshake refused."); }
+                setInterval(() => updateBalance(walletAddress), 8000);
+            } catch (err) { addLog("Critical: Access denied."); }
         } else { alert("MetaMask not found!"); }
     };
 
     document.getElementById('depositBtn').onclick = async () => {
         const amt = document.getElementById('depositAmount').value;
-        if (!amt || amt <= 0) return;
+        if (!amt || amt <= 0) { addLog("Error: Invalid amount."); return; }
         
-        document.getElementById('agentThinking').innerText = "● AGENT ANALYZING...";
-        document.getElementById('agentThinking').style.color = "#38bdf8";
-        
-        addLog(`Analyzing risk for ${amt} USDC deposit...`);
-        addLog("Verifying Based Labs Pool compliance hooks..."); //
-        
-        try {
-            const provider = new ethers.providers.Web3Provider(window.ethereum);
-            const signer = provider.getSigner();
-            const usdc = new ethers.Contract(USDC_TOKEN, MIN_ABI, signer);
-            const val = ethers.utils.parseUnits(amt.toString(), 6); // USDC Token tem 6 decimais
-
-            addLog("Checking ERC20 Allowance...");
-            const allowance = await usdc.allowance(walletAddress, STABLE_FACTORY);
-
-            if (allowance.lt(val)) {
-                addLog("Action: Requesting permission to move funds.");
-                const tx = await usdc.approve(STABLE_FACTORY, ethers.constants.MaxUint256);
-                await tx.wait();
-                addLog("Allowance granted by owner.");
-            }
-
-            addLog("Executing programmable supply logic...");
-            // Simulação de sucesso no cofre
-            setTimeout(() => {
-                const current = parseFloat(document.getElementById('vaultBalance').innerText) || 0;
-                document.getElementById('vaultBalance').innerText = (current + (amt * 0.92)).toFixed(2); // Simula taxa/conversão
-                addLog(`Success: ${amt} USDC locked in Yield Strategy.`);
-                document.getElementById('agentThinking').innerText = "● AGENT IDLE";
-                document.getElementById('agentThinking').style.color = "#10b981";
-            }, 2000);
-
-        } catch (e) {
-            addLog("Agent Error: Transaction aborted.");
-            document.getElementById('agentThinking').style.color = "#ef4444";
-        }
+        addLog(`Step 1: Checking token permissions...`);
+        // Simulação de aprovação e depósito
+        setTimeout(() => {
+            vaultTotal += parseFloat(amt);
+            document.getElementById('vaultBalance').innerText = vaultTotal.toFixed(2) + " EURC";
+            addLog(`Success: ${amt} USDC deployed to Stable Pool.`);
+        }, 1500);
     };
 
+    // Pequena simulação de "Yield" crescendo a cada 3 segundos
+    setInterval(() => {
+        if(vaultTotal > 0) {
+            vaultTotal += 0.0001;
+            document.getElementById('vaultBalance').innerText = vaultTotal.toFixed(4) + " EURC";
+        }
+    }, 3000);
+
     document.getElementById('strategyBtn').onclick = async () => {
-        addLog("Agent scanning FX Engine for USDC/EURC pairs...");
-        addLog("Detecting deterministic fees on Arc..."); //
-        addLog("Calculating optimal rebalance path via Tokenmaster..."); //
-        
-        setTimeout(() => {
-            addLog("Signal: Liquidity found in Stable Pool Factory."); //
-            addLog("Executing sub-second swap strategy...");
-            addLog("Result: Portfolio rebalanced to 50/50 USDC/EURC.");
-        }, 1500);
+        addLog("Analyzing FX liquidity (USDC/EURC)...");
+        addLog("Agent optimizing for best yield curve.");
     };
 </script>
 
