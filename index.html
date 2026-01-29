@@ -1,150 +1,103 @@
-<!DOCTYPE html>
-<html lang="pt">
-<head>
-    <meta charset="UTF-8">
-    <title>Arc Smart Treasury | Ultimate Sync</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js"></script>
-    <style>
-        /* CSS INTEGRALMENTE MANTIDO DO TEU CÓDIGO */
-        body { font-family: 'Inter', 'JetBrains Mono', monospace; background-color: #020202; color: #fff; margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px; }
-        .container { width: 100%; max-width: 500px; padding: 30px; border: 1px solid #111; border-radius: 20px; background: #050505; box-shadow: 0 0 40px rgba(56, 189, 248, 0.05); }
-        .yield-card { background: linear-gradient(135deg, #0a0a0a 0%, #111 100%); padding: 20px; border-radius: 12px; border: 1px solid #1a1a1a; margin-bottom: 20px; text-align: center; }
-        .yield-value { font-size: 32px; font-weight: 800; color: #10b981; }
-        .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px; }
-        .stat-card { background: #080808; padding: 15px; border-radius: 12px; border: 1px solid #111; }
-        .stat-label { font-size: 9px; color: #555; text-transform: uppercase; margin-bottom: 8px; display: block; }
-        .stat-value { font-size: 18px; font-weight: 600; color: #38bdf8; }
-        .console { background: #000; border: 1px solid #111; border-radius: 10px; padding: 15px; height: 140px; overflow-y: auto; margin-top: 20px; font-size: 10px; color: #38bdf8; border-left: 2px solid #38bdf8; text-align: left; }
-        .btn-main { background: #fff; color: #000; border: none; padding: 16px; width: 100%; border-radius: 12px; font-weight: 700; cursor: pointer; margin-top: 10px; font-size: 13px; }
-        .btn-secondary { background: #0a0a0a; color: #fff; border: 1px solid #222; margin-bottom: 5px; }
-        .amount-input { background: #080808; border: 1px solid #1a1a1a; color: #fff; padding: 15px; width: 100%; border-radius: 10px; box-sizing: border-box; font-size: 16px; margin-bottom: 15px; outline: none; text-align: center; }
-        .btn-withdraw { color: #ef4444; background: none; border: 1px solid #ef4444; width: 100%; padding: 10px; border-radius: 10px; cursor: pointer; margin-top: 10px; font-size: 11px; }
-    </style>
-</head>
-<body>
+import { 
+  createBridgeKit, 
+  isKitError, 
+  isRetryableError 
+} from "@circle-fin/bridge-kit";
+import { createViemAdapterFromPrivateKey } from "@circle-fin/adapter-viem-v2";
+import { createSolanaAdapterFromPrivateKey } from "@circle-fin/adapter-solana-kit";
+import { createCCTPProvider } from "@circle-fin/provider-cctp-v2";
 
-<div class="container">
-    <h1 style="font-size: 20px; margin-bottom: 5px;">ARC SMART TREASURY</h1>
-    <p style="color:#555; font-size:10px; margin-top:-5px; margin-bottom: 20px;">STABLE SYNCHRONIZATION v5.1</p>
+/**
+ * ============================================================
+ * SUPER APP HUB - V5.5 FULL EXECUTABLE
+ * ============================================================
+ */
 
-    <div class="yield-card">
-        <span class="stat-label">Real-Time APY (Based Labs)</span>
-        <div class="yield-value">12.45%</div>
-    </div>
+// 1. CONFIGURAÇÕES (Substitui pelos teus dados ou usa .env)
+const PRIVATE_KEY = "0x..." ; // Tua chave privada EVM (Arc/Eth/Monad)
+const SOLANA_PRIVATE_KEY = "..."; // Tua chave Solana (Base58)
+const USER_ADDRESS = "..."; // Teu endereço público
 
-    <div class="stat-grid">
-        <div class="stat-card">
-            <span class="stat-label">Wallet Balance</span>
-            <div id="walletDisplay" class="stat-value">---</div>
-        </div>
-        <div class="stat-card">
-            <span class="stat-label">Vault Strategy</span>
-            <div id="vaultDisplay" class="stat-value" style="color: #a855f7;">0.00 EURC</div>
-        </div>
-    </div>
+async function main() {
+  console.log("🚀 A iniciar Super App Hub v5.5...");
 
-    <button id="connectBtn" class="btn-main">BOOT SYSTEM AGENT</button>
+  try {
+    // 2. INICIALIZAÇÃO DOS ADAPTADORES COM SIGNERS (Essencial para assinar txs)
+    const viemAdapter = createViemAdapterFromPrivateKey({
+      privateKey: PRIVATE_KEY as `0x${string}`,
+    });
+
+    const solanaAdapter = createSolanaAdapterFromPrivateKey({
+      privateKey: SOLANA_PRIVATE_KEY,
+      computeUnitLimit: 350000, // Upgrade v1.3.1 para estabilidade CCTP
+    });
+
+    const kit = createBridgeKit({
+      adapters: [viemAdapter, solanaAdapter],
+      providers: [createCCTPProvider()] // Motor CCTP com Auto-Recovery v1.5.0
+    });
+
+    // 3. CONSULTA DE SALDOS (Multi-chain sem pop-ups)
+    console.log("\n💰 Verificando saldos em background...");
+    const chains = ['ethereum-mainnet', 'arc-testnet', 'solana-mainnet'];
     
-    <div id="dashboard" style="display:none;">
-        <input type="number" id="opAmount" class="amount-input" placeholder="0.00 USDC">
-        <button id="depositBtn" class="btn-main btn-secondary">SUPPLY TO BASED POOL</button>
-        <button id="swapBtn" class="btn-main">EXECUTE AGENTIC FX SWAP</button>
-        <button id="withdrawBtn" class="btn-withdraw">WITHDRAW FROM VAULT</button>
-        <div class="console" id="console"></div>
-    </div>
-</div>
-
-<script>
-    const USDC_ADDRESS = "0x3600000000000000000000000000000000000000"; 
-    const VAULT_ADDRESS = "0x0000006a50a9c9efae8875266fb8538740f90e66";
-
-    let walletBal = 0; 
-    let vaultBal = 0;
-    let provider, signer, userAddress;
-
-    function addLog(msg) {
-        const c = document.getElementById('console');
-        c.innerHTML += `> ${msg}<br>`;
-        c.scrollTop = c.scrollHeight;
+    for (const chain of chains) {
+      try {
+        const balance = await kit.adapter(chain).native.balanceOf(USER_ADDRESS);
+        console.log(`   - ${chain.toUpperCase()}: ${balance.formatted} ${balance.symbol}`);
+      } catch (e) {
+        console.log(`   - ${chain.toUpperCase()}: Erro ao ler saldo (verifica a rede)`);
+      }
     }
 
-    // NOVA FUNÇÃO: Sincroniza o saldo real com a blockchain
-    async function updateRealBalance() {
-        try {
-            const erc20Abi = ["function balanceOf(address owner) view returns (uint256)"];
-            const usdcContract = new ethers.Contract(USDC_ADDRESS, erc20Abi, provider);
-            const balance = await usdcContract.balanceOf(userAddress);
-            walletBal = parseFloat(ethers.utils.formatUnits(balance, 6));
-            document.getElementById('walletDisplay').innerText = walletBal.toFixed(4) + " USDC";
-        } catch (e) {
-            console.error("Sync error:", e);
-        }
+    // 4. PARÂMETROS DA TRANSFERÊNCIA (Exemplo: ETH -> ARC)
+    const bridgeParams = {
+      sourceChain: 'ethereum-mainnet',
+      destinationChain: 'arc-testnet', // Onde o USDC é gás nativo
+      token: 'USDC',
+      amount: '10.0',
+      sourceAddress: USER_ADDRESS,
+      destinationAddress: USER_ADDRESS
+    };
+
+    // 5. ESTIMATIVA E VALIDAÇÃO PRE-FLIGHT
+    console.log("\n🛠️ Analisando rota e validando taxas...");
+    const estimate = await kit.estimate(bridgeParams);
+
+    if (!estimate.gasEstimation.hasEnoughNativeToken) {
+      throw new Error(`Gás insuficiente. Precisas de ${estimate.gasEstimation.amount} na rede de origem.`);
     }
 
-    document.getElementById('connectBtn').onclick = async () => {
-        if (window.ethereum) {
-            try {
-                const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
-                userAddress = accounts[0];
-                provider = new ethers.providers.Web3Provider(window.ethereum);
-                signer = provider.getSigner();
-                
-                document.getElementById('connectBtn').style.display = 'none';
-                document.getElementById('dashboard').style.display = 'block';
-                addLog("Neural link active. Wallet synced.");
-                
-                // Em vez de saldo estático, vamos buscar o real
-                await updateRealBalance();
-                // Atualiza o saldo automaticamente a cada 10 segundos
-                setInterval(updateRealBalance, 10000); 
+    // 6. EXECUÇÃO DA PONTE
+    console.log(`✅ Tudo OK. Iniciando Bridge para ${bridgeParams.destinationChain}...`);
+    const transfer = await kit.bridge(bridgeParams);
 
-            } catch (err) { addLog("Connection refused."); }
-        } else { alert("Please install MetaMask/Rabby!"); }
-    };
-
-    document.getElementById('depositBtn').onclick = async () => {
-        const amt = document.getElementById('opAmount').value;
-        if (!amt || parseFloat(amt) > walletBal) return addLog("Saldo insuficiente.");
-
-        try {
-            const erc20Abi = ["function approve(address spender, uint256 amount) public returns (bool)"];
-            const vaultAbi = ["function deposit(uint256 amount) public returns (bool)"];
-
-            const usdcContract = new ethers.Contract(USDC_ADDRESS, erc20Abi, signer);
-            const vaultContract = new ethers.Contract(VAULT_ADDRESS, vaultAbi, signer);
-            const amountWei = ethers.utils.parseUnits(amt, 6);
-
-            addLog(`Passo 1: A solicitar aprovação de ${amt} USDC...`);
-            const approveTx = await usdcContract.approve(VAULT_ADDRESS, amountWei);
-            await approveTx.wait();
-            addLog("Sucesso: USDC aprovado.");
-
-            addLog(`Passo 2: A processar depósito...`);
-            const depositTx = await vaultContract.deposit(amountWei);
-            await depositTx.wait();
-
-            addLog("Sucesso Total! A sincronizar saldo final...");
-            // Espera 2 segundos para a rede atualizar e atualiza o ecrã
-            setTimeout(updateRealBalance, 2000);
-
-        } catch (err) {
-            addLog(`Erro: Transação rejeitada ou falhou.`);
+    // 7. MONITORIZAÇÃO COM AUTO-RECOVERY (v1.5.0)
+    const result = await transfer.waitForSuccess({
+      onStatusUpdate: (step) => {
+        console.log(`[${new Date().toLocaleTimeString()}] ${step.type}: ${step.status}`);
+        
+        // Novo utilitário v1.5.0: Detecção de expiração automática
+        if (step.status === 'attestation_expired') {
+          console.warn("⚠️ Atestação expirou no CCTP. O Kit está a re-atestar a transação...");
         }
-    };
+      }
+    });
 
-    // Mantidas as tuas funções de Swap e Withdraw visuais
-    document.getElementById('swapBtn').onclick = () => {
-        addLog("Neural Optimization: Scanning FX pairs...");
-        setTimeout(() => addLog("Result: Portfolio rebalanced to 50/50 USDC/EURC."), 1000);
-    };
+    console.log("\n==========================================");
+    console.log("🎉 TRANSFERÊNCIA CONCLUÍDA COM SUCESSO!");
+    console.log(`🔗 Hash: ${result.transactionHash}`);
+    console.log("==========================================\n");
 
-    document.getElementById('withdrawBtn').onclick = () => {
-        addLog("Iniciando retirada total...");
-        setTimeout(() => {
-            addLog("Withdrawal complete. Assets restored to wallet.");
-            updateRealBalance();
-        }, 800);
-    };
-</script>
-</body>
-</html>
+  } catch (error) {
+    // 8. GESTÃO DE ERROS INTELIGENTE
+    if (isKitError(error)) {
+      console.error(`❌ Erro Circle [${error.code}]: ${error.message}`);
+      if (isRetryableError(error)) console.log("🔄 Dica: O erro parece temporário, tenta novamente.");
+    } else {
+      console.error("❌ Erro de Execução:", error);
+    }
+  }
+}
+
+main();
