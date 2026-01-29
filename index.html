@@ -2,149 +2,38 @@
 <html lang="pt">
 <head>
     <meta charset="UTF-8">
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Arc & Circle Super App v5.5</title>
+    <title>Arc & Circle Super App</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        body { background: #0f172a; color: white; font-family: 'Inter', sans-serif; }
-        .glass { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); }
-        .console-log { font-family: 'Fira Code', monospace; font-size: 0.85rem; }
-        .gradient-text { background: linear-gradient(90deg, #38bdf8, #818cf8); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-    </style>
 </head>
-<body class="p-4 md:p-8">
-
-    <div class="max-w-4xl mx-auto">
-        <header class="mb-8 flex justify-between items-center">
-            <div>
-                <h1 class="text-3xl font-bold gradient-text">Super App Hub</h1>
-                <p class="text-slate-400">Powered by Circle Bridge Kit v1.5.0</p>
-            </div>
-            <div id="connectionStatus" class="px-4 py-2 rounded-full bg-red-500/20 text-red-400 text-sm border border-red-500/50">
-                Desconectado
-            </div>
+<body class="bg-slate-950 text-white min-h-screen p-8">
+    <div id="app" class="max-w-4xl mx-auto">
+        <header class="mb-8">
+            <h1 class="text-4xl font-bold bg-gradient-to-r from-blue-400 to-indigo-500 bg-clip-text text-transparent">Super App Hub v5.5</h1>
+            <p class="text-slate-400">Bridge Kit v1.5.0 + Arc Network</p>
         </header>
 
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-            
-            <section class="md:col-span-1 glass rounded-2xl p-6">
-                <h2 class="text-xl font-semibold mb-4 flex items-center">
-                    <span class="mr-2">💰</span> Saldos
-                </h2>
-                <div id="balanceList" class="space-y-4">
-                    <div class="flex justify-between items-center p-3 bg-slate-800/50 rounded-lg">
-                        <span class="text-slate-400">Ethereum</span>
-                        <span id="ethBalance" class="font-mono">--.---</span>
-                    </div>
-                    <div class="flex justify-between items-center p-3 bg-slate-800/50 rounded-lg border-l-4 border-blue-500">
-                        <span class="text-slate-400">Arc (USDC Gas)</span>
-                        <span id="arcBalance" class="font-mono">--.---</span>
-                    </div>
-                    <div class="flex justify-between items-center p-3 bg-slate-800/50 rounded-lg">
-                        <span class="text-slate-400">Solana</span>
-                        <span id="solBalance" class="font-mono">--.---</span>
-                    </div>
-                </div>
-            </section>
-
-            <section class="md:col-span-2 glass rounded-2xl p-6">
-                <h2 class="text-xl font-semibold mb-4">Transferir USDC (CCTP)</h2>
-                
-                <div class="space-y-4">
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-sm text-slate-400 mb-1">Origem</label>
-                            <select id="sourceChain" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-3 outline-none focus:border-blue-500">
-                                <option value="ethereum-mainnet">Ethereum</option>
-                                <option value="solana-mainnet">Solana</option>
-                                <option value="base-mainnet">Base</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-sm text-slate-400 mb-1">Destino</label>
-                            <select id="destChain" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-3 outline-none focus:border-blue-500">
-                                <option value="arc-testnet">Arc Network</option>
-                                <option value="monad-testnet">Monad Testnet</option>
-                                <option value="solana-mainnet">Solana</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <div>
-                        <label class="block text-sm text-slate-400 mb-1">Quantidade (USDC)</label>
-                        <input type="number" id="amount" placeholder="0.00" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-3 outline-none focus:border-blue-500 text-2xl font-mono">
-                    </div>
-
-                    <button id="bridgeBtn" class="w-full bg-blue-600 hover:bg-blue-500 transition-colors py-4 rounded-xl font-bold text-lg shadow-lg shadow-blue-500/20">
-                        Iniciar Bridge Segura
-                    </button>
-                </div>
-            </section>
-        </div>
-
-        <footer class="mt-8">
-            <div class="bg-black/50 rounded-xl border border-slate-800 overflow-hidden">
-                <div class="px-4 py-2 bg-slate-800/80 border-b border-slate-700 flex justify-between items-center">
-                    <span class="text-xs font-bold uppercase tracking-widest text-slate-400">Sistema de Log v5.5 (Auto-Recovery Active)</span>
-                    <button onclick="document.getElementById('console').innerHTML = ''" class="text-xs text-slate-500 hover:text-white">Limpar</button>
-                </div>
-                <div id="console" class="p-4 h-48 overflow-y-auto console-log space-y-1 text-blue-300">
-                    <div>> Aguardando inicialização...</div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div class="bg-slate-900/50 p-6 rounded-2xl border border-slate-800">
+                <h2 class="text-xl font-semibold mb-4">💰 Saldos Atuais</h2>
+                <div id="balances" class="space-y-3 text-sm font-mono text-blue-300">
+                    <p>A carregar saldos...</p>
                 </div>
             </div>
-        </footer>
+
+            <div class="bg-slate-900/50 p-6 rounded-2xl border border-slate-800">
+                <h2 class="text-xl font-semibold mb-4">🚀 Transferir USDC</h2>
+                <button id="bridgeBtn" class="w-full bg-blue-600 hover:bg-blue-500 py-3 rounded-xl font-bold transition-all">
+                    Iniciar Bridge (Arc)
+                </button>
+            </div>
+        </div>
+
+        <div class="mt-8 bg-black rounded-lg p-4 border border-slate-800 h-64 overflow-y-auto font-mono text-xs" id="terminal">
+            <div class="text-slate-500">> Sistema inicializado. Pronto para CCTP.</div>
+        </div>
     </div>
-
-    <script type="module">
-        // NOTA: Em produção, usarias importações reais do npm. 
-        // Aqui simulamos a integração que estudámos.
-        
-        const log = (msg, type = 'info') => {
-            const div = document.createElement('div');
-            const colors = { info: 'text-blue-300', warn: 'text-yellow-400', error: 'text-red-400', success: 'text-green-400' };
-            div.className = colors[type];
-            div.innerHTML = `<span class="text-slate-600">[${new Date().toLocaleTimeString()}]</span> > ${msg}`;
-            const consoleEl = document.getElementById('console');
-            consoleEl.appendChild(div);
-            consoleEl.scrollTop = consoleEl.scrollHeight;
-        };
-
-        document.getElementById('bridgeBtn').addEventListener('click', async () => {
-            const source = document.getElementById('sourceChain').value;
-            const dest = document.getElementById('destChain').value;
-            const amount = document.getElementById('amount').value;
-
-            if(!amount) return log('Introduz um valor válido.', 'warn');
-
-            log(`Iniciando bridge de ${amount} USDC para ${dest}...`);
-            
-            // Simulação da lógica v1.5.0 que estudámos
-            log('🔍 Validando Gás Pre-flight...');
-            
-            // Lógica específica da Arc que estudámos
-            if(dest === 'arc-testnet') {
-                log('✨ Arc detectada: Usando USDC como gás nativo.', 'info');
-            }
-
-            log('⚙️ Criando atestação CCTP...');
-            
-            // Simulação de delay de rede
-            setTimeout(() => {
-                log('⚠️ Status: attestation_expired (Simulado)', 'warn');
-                log('🔄 Triggering Auto-Recovery v1.5.0: Executando reAttest()...', 'info');
-                
-                setTimeout(() => {
-                    log('✅ Sucesso! Transação finalizada na rede de destino.', 'success');
-                    log(`🔗 Hash: 0x${Math.random().toString(16).slice(2)}...`, 'success');
-                }, 2000);
-            }, 2000);
-        });
-
-        // Simulação de carga de saldos (v1.4.0 performance)
-        window.addEventListener('load', () => {
-            log('Motor Bridge Kit v1.5.0 carregado com sucesso.', 'success');
-            log('Suporte para Monad e Arc ativo.');
-        });
-    </script>
+    <script type="module" src="/src/main.ts"></script>
 </body>
 </html>
