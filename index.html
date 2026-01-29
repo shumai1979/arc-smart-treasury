@@ -1,103 +1,150 @@
-import { 
-  createBridgeKit, 
-  isKitError, 
-  isRetryableError 
-} from "@circle-fin/bridge-kit";
-import { createViemAdapterFromPrivateKey } from "@circle-fin/adapter-viem-v2";
-import { createSolanaAdapterFromPrivateKey } from "@circle-fin/adapter-solana-kit";
-import { createCCTPProvider } from "@circle-fin/provider-cctp-v2";
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Arc & Circle Super App v5.5</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { background: #0f172a; color: white; font-family: 'Inter', sans-serif; }
+        .glass { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); }
+        .console-log { font-family: 'Fira Code', monospace; font-size: 0.85rem; }
+        .gradient-text { background: linear-gradient(90deg, #38bdf8, #818cf8); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    </style>
+</head>
+<body class="p-4 md:p-8">
 
-/**
- * ============================================================
- * SUPER APP HUB - V5.5 FULL EXECUTABLE
- * ============================================================
- */
+    <div class="max-w-4xl mx-auto">
+        <header class="mb-8 flex justify-between items-center">
+            <div>
+                <h1 class="text-3xl font-bold gradient-text">Super App Hub</h1>
+                <p class="text-slate-400">Powered by Circle Bridge Kit v1.5.0</p>
+            </div>
+            <div id="connectionStatus" class="px-4 py-2 rounded-full bg-red-500/20 text-red-400 text-sm border border-red-500/50">
+                Desconectado
+            </div>
+        </header>
 
-// 1. CONFIGURAÇÕES (Substitui pelos teus dados ou usa .env)
-const PRIVATE_KEY = "0x..." ; // Tua chave privada EVM (Arc/Eth/Monad)
-const SOLANA_PRIVATE_KEY = "..."; // Tua chave Solana (Base58)
-const USER_ADDRESS = "..."; // Teu endereço público
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            
+            <section class="md:col-span-1 glass rounded-2xl p-6">
+                <h2 class="text-xl font-semibold mb-4 flex items-center">
+                    <span class="mr-2">💰</span> Saldos
+                </h2>
+                <div id="balanceList" class="space-y-4">
+                    <div class="flex justify-between items-center p-3 bg-slate-800/50 rounded-lg">
+                        <span class="text-slate-400">Ethereum</span>
+                        <span id="ethBalance" class="font-mono">--.---</span>
+                    </div>
+                    <div class="flex justify-between items-center p-3 bg-slate-800/50 rounded-lg border-l-4 border-blue-500">
+                        <span class="text-slate-400">Arc (USDC Gas)</span>
+                        <span id="arcBalance" class="font-mono">--.---</span>
+                    </div>
+                    <div class="flex justify-between items-center p-3 bg-slate-800/50 rounded-lg">
+                        <span class="text-slate-400">Solana</span>
+                        <span id="solBalance" class="font-mono">--.---</span>
+                    </div>
+                </div>
+            </section>
 
-async function main() {
-  console.log("🚀 A iniciar Super App Hub v5.5...");
+            <section class="md:col-span-2 glass rounded-2xl p-6">
+                <h2 class="text-xl font-semibold mb-4">Transferir USDC (CCTP)</h2>
+                
+                <div class="space-y-4">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm text-slate-400 mb-1">Origem</label>
+                            <select id="sourceChain" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-3 outline-none focus:border-blue-500">
+                                <option value="ethereum-mainnet">Ethereum</option>
+                                <option value="solana-mainnet">Solana</option>
+                                <option value="base-mainnet">Base</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm text-slate-400 mb-1">Destino</label>
+                            <select id="destChain" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-3 outline-none focus:border-blue-500">
+                                <option value="arc-testnet">Arc Network</option>
+                                <option value="monad-testnet">Monad Testnet</option>
+                                <option value="solana-mainnet">Solana</option>
+                            </select>
+                        </div>
+                    </div>
 
-  try {
-    // 2. INICIALIZAÇÃO DOS ADAPTADORES COM SIGNERS (Essencial para assinar txs)
-    const viemAdapter = createViemAdapterFromPrivateKey({
-      privateKey: PRIVATE_KEY as `0x${string}`,
-    });
+                    <div>
+                        <label class="block text-sm text-slate-400 mb-1">Quantidade (USDC)</label>
+                        <input type="number" id="amount" placeholder="0.00" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-3 outline-none focus:border-blue-500 text-2xl font-mono">
+                    </div>
 
-    const solanaAdapter = createSolanaAdapterFromPrivateKey({
-      privateKey: SOLANA_PRIVATE_KEY,
-      computeUnitLimit: 350000, // Upgrade v1.3.1 para estabilidade CCTP
-    });
+                    <button id="bridgeBtn" class="w-full bg-blue-600 hover:bg-blue-500 transition-colors py-4 rounded-xl font-bold text-lg shadow-lg shadow-blue-500/20">
+                        Iniciar Bridge Segura
+                    </button>
+                </div>
+            </section>
+        </div>
 
-    const kit = createBridgeKit({
-      adapters: [viemAdapter, solanaAdapter],
-      providers: [createCCTPProvider()] // Motor CCTP com Auto-Recovery v1.5.0
-    });
+        <footer class="mt-8">
+            <div class="bg-black/50 rounded-xl border border-slate-800 overflow-hidden">
+                <div class="px-4 py-2 bg-slate-800/80 border-b border-slate-700 flex justify-between items-center">
+                    <span class="text-xs font-bold uppercase tracking-widest text-slate-400">Sistema de Log v5.5 (Auto-Recovery Active)</span>
+                    <button onclick="document.getElementById('console').innerHTML = ''" class="text-xs text-slate-500 hover:text-white">Limpar</button>
+                </div>
+                <div id="console" class="p-4 h-48 overflow-y-auto console-log space-y-1 text-blue-300">
+                    <div>> Aguardando inicialização...</div>
+                </div>
+            </div>
+        </footer>
+    </div>
 
-    // 3. CONSULTA DE SALDOS (Multi-chain sem pop-ups)
-    console.log("\n💰 Verificando saldos em background...");
-    const chains = ['ethereum-mainnet', 'arc-testnet', 'solana-mainnet'];
-    
-    for (const chain of chains) {
-      try {
-        const balance = await kit.adapter(chain).native.balanceOf(USER_ADDRESS);
-        console.log(`   - ${chain.toUpperCase()}: ${balance.formatted} ${balance.symbol}`);
-      } catch (e) {
-        console.log(`   - ${chain.toUpperCase()}: Erro ao ler saldo (verifica a rede)`);
-      }
-    }
-
-    // 4. PARÂMETROS DA TRANSFERÊNCIA (Exemplo: ETH -> ARC)
-    const bridgeParams = {
-      sourceChain: 'ethereum-mainnet',
-      destinationChain: 'arc-testnet', // Onde o USDC é gás nativo
-      token: 'USDC',
-      amount: '10.0',
-      sourceAddress: USER_ADDRESS,
-      destinationAddress: USER_ADDRESS
-    };
-
-    // 5. ESTIMATIVA E VALIDAÇÃO PRE-FLIGHT
-    console.log("\n🛠️ Analisando rota e validando taxas...");
-    const estimate = await kit.estimate(bridgeParams);
-
-    if (!estimate.gasEstimation.hasEnoughNativeToken) {
-      throw new Error(`Gás insuficiente. Precisas de ${estimate.gasEstimation.amount} na rede de origem.`);
-    }
-
-    // 6. EXECUÇÃO DA PONTE
-    console.log(`✅ Tudo OK. Iniciando Bridge para ${bridgeParams.destinationChain}...`);
-    const transfer = await kit.bridge(bridgeParams);
-
-    // 7. MONITORIZAÇÃO COM AUTO-RECOVERY (v1.5.0)
-    const result = await transfer.waitForSuccess({
-      onStatusUpdate: (step) => {
-        console.log(`[${new Date().toLocaleTimeString()}] ${step.type}: ${step.status}`);
+    <script type="module">
+        // NOTA: Em produção, usarias importações reais do npm. 
+        // Aqui simulamos a integração que estudámos.
         
-        // Novo utilitário v1.5.0: Detecção de expiração automática
-        if (step.status === 'attestation_expired') {
-          console.warn("⚠️ Atestação expirou no CCTP. O Kit está a re-atestar a transação...");
-        }
-      }
-    });
+        const log = (msg, type = 'info') => {
+            const div = document.createElement('div');
+            const colors = { info: 'text-blue-300', warn: 'text-yellow-400', error: 'text-red-400', success: 'text-green-400' };
+            div.className = colors[type];
+            div.innerHTML = `<span class="text-slate-600">[${new Date().toLocaleTimeString()}]</span> > ${msg}`;
+            const consoleEl = document.getElementById('console');
+            consoleEl.appendChild(div);
+            consoleEl.scrollTop = consoleEl.scrollHeight;
+        };
 
-    console.log("\n==========================================");
-    console.log("🎉 TRANSFERÊNCIA CONCLUÍDA COM SUCESSO!");
-    console.log(`🔗 Hash: ${result.transactionHash}`);
-    console.log("==========================================\n");
+        document.getElementById('bridgeBtn').addEventListener('click', async () => {
+            const source = document.getElementById('sourceChain').value;
+            const dest = document.getElementById('destChain').value;
+            const amount = document.getElementById('amount').value;
 
-  } catch (error) {
-    // 8. GESTÃO DE ERROS INTELIGENTE
-    if (isKitError(error)) {
-      console.error(`❌ Erro Circle [${error.code}]: ${error.message}`);
-      if (isRetryableError(error)) console.log("🔄 Dica: O erro parece temporário, tenta novamente.");
-    } else {
-      console.error("❌ Erro de Execução:", error);
-    }
-  }
-}
+            if(!amount) return log('Introduz um valor válido.', 'warn');
 
-main();
+            log(`Iniciando bridge de ${amount} USDC para ${dest}...`);
+            
+            // Simulação da lógica v1.5.0 que estudámos
+            log('🔍 Validando Gás Pre-flight...');
+            
+            // Lógica específica da Arc que estudámos
+            if(dest === 'arc-testnet') {
+                log('✨ Arc detectada: Usando USDC como gás nativo.', 'info');
+            }
+
+            log('⚙️ Criando atestação CCTP...');
+            
+            // Simulação de delay de rede
+            setTimeout(() => {
+                log('⚠️ Status: attestation_expired (Simulado)', 'warn');
+                log('🔄 Triggering Auto-Recovery v1.5.0: Executando reAttest()...', 'info');
+                
+                setTimeout(() => {
+                    log('✅ Sucesso! Transação finalizada na rede de destino.', 'success');
+                    log(`🔗 Hash: 0x${Math.random().toString(16).slice(2)}...`, 'success');
+                }, 2000);
+            }, 2000);
+        });
+
+        // Simulação de carga de saldos (v1.4.0 performance)
+        window.addEventListener('load', () => {
+            log('Motor Bridge Kit v1.5.0 carregado com sucesso.', 'success');
+            log('Suporte para Monad e Arc ativo.');
+        });
+    </script>
+</body>
+</html>
