@@ -1,48 +1,99 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <title>Arc Smart Treasury | Recovery</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js"></script>
+    <style>
+        body { font-family: 'Inter', monospace; background-color: #020202; color: #fff; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
+        .container { width: 100%; max-width: 450px; padding: 25px; border: 1px solid #111; border-radius: 20px; background: #050505; text-align: center; }
+        .stat-card { background: #080808; padding: 15px; border-radius: 12px; border: 1px solid #111; margin: 10px 0; }
+        .stat-value { font-size: 22px; font-weight: 600; color: #38bdf8; }
+        .console { background: #000; border: 1px solid #111; padding: 10px; height: 100px; overflow-y: auto; font-size: 10px; color: #38bdf8; text-align: left; margin-top: 15px; }
+        .btn { background: #fff; color: #000; border: none; padding: 15px; width: 100%; border-radius: 12px; font-weight: 700; cursor: pointer; }
+        .input-amt { background: #080808; border: 1px solid #1a1a1a; color: #fff; padding: 12px; width: 100%; border-radius: 10px; margin-bottom: 10px; box-sizing: border-box; text-align: center; }
+    </style>
+</head>
+<body>
+
+<div class="container" id="mainApp">
+    <h2 style="font-size: 18px;">ARC SMART TREASURY</h2>
+    <p style="color: #555; font-size: 10px;">ESTÁVEL v4.9 (RECOVERY)</p>
+
+    <div class="stat-card">
+        <div style="font-size: 9px; color: #555; text-transform: uppercase;">Wallet Balance</div>
+        <div id="walletDisplay" class="stat-value">---</div>
+    </div>
+
+    <button id="connectBtn" class="btn">BOOT SYSTEM AGENT</button>
+    
+    <div id="dashboard" style="display:none; margin-top: 20px;">
+        <input type="number" id="opAmount" class="input-amt" placeholder="0.00 USDC">
+        <button id="depositBtn" class="btn" style="background: #0a0a0a; color: #fff; border: 1px solid #222;">SUPPLY TO BASED POOL</button>
+        <div class="console" id="logBox"></div>
+    </div>
+</div>
+
 <script>
-    // Configurações mantidas
+    // Endereços Reais confirmados nas tuas imagens
     const USDC_ADDRESS = "0x3600000000000000000000000000000000000000"; 
     const VAULT_ADDRESS = "0x0000006a50a9c9efae8875266fb8538740f90e66";
 
-    // ... (restante do código v3.0 preservado)
+    let provider, signer, userAddress;
+
+    function log(msg) {
+        const lb = document.getElementById('logBox');
+        lb.innerHTML += `> ${msg}<br>`;
+        lb.scrollTop = lb.scrollHeight;
+    }
+
+    async function syncBalance() {
+        try {
+            const abi = ["function balanceOf(address owner) view returns (uint256)"];
+            const contract = new ethers.Contract(USDC_ADDRESS, abi, provider);
+            const bal = await contract.balanceOf(userAddress);
+            document.getElementById('walletDisplay').innerText = ethers.utils.formatUnits(bal, 6) + " USDC";
+        } catch (e) { log("Sync error."); }
+    }
+
+    document.getElementById('connectBtn').onclick = async () => {
+        if (!window.ethereum) return alert("Install Rabby/MetaMask");
+        try {
+            const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+            userAddress = accounts[0];
+            provider = new ethers.providers.Web3Provider(window.ethereum);
+            signer = provider.getSigner();
+            
+            document.getElementById('connectBtn').style.display = 'none';
+            document.getElementById('dashboard').style.display = 'block';
+            log("Neural link active.");
+            await syncBalance();
+        } catch (e) { log("Connection failed."); }
+    };
 
     document.getElementById('depositBtn').onclick = async () => {
-        const amt = document.getElementById('opAmount').value;
-        if (!amt || parseFloat(amt) <= 0) return;
-
+        const val = document.getElementById('opAmount').value;
+        if (!val) return;
         try {
-            const erc20Abi = ["function approve(address spender, uint256 amount) public returns (bool)"];
-            const vaultAbi = ["function deposit(uint256 amount) public returns (bool)"];
+            const usdcAbi = ["function approve(address s, uint256 a) public returns (bool)"];
+            const vaultAbi = ["function deposit(uint256 a) public returns (bool)"];
             
-            const usdcContract = new ethers.Contract(USDC_ADDRESS, erc20Abi, signer);
-            const vaultContract = new ethers.Contract(VAULT_ADDRESS, vaultAbi, signer);
-            const amountWei = ethers.utils.parseUnits(amt, 6);
+            const usdc = new ethers.Contract(USDC_ADDRESS, usdcAbi, signer);
+            const vault = new ethers.Contract(VAULT_ADDRESS, vaultAbi, signer);
+            const amtWei = ethers.utils.parseUnits(val, 6);
 
-            addLog(`Iniciando fluxo de capital: ${amt} USDC...`);
+            log(`Approving ${val} USDC...`);
+            const tx1 = await usdc.approve(VAULT_ADDRESS, amtWei);
+            await tx1.wait();
 
-            // PASSO 1: APPROVE
-            const approveTx = await usdcContract.approve(VAULT_ADDRESS, amountWei);
-            addLog("Aguardando permissão da rede ARC...");
-            await approveTx.wait();
+            log("Executing Deposit...");
+            const tx2 = await vault.deposit(amtWei);
+            await tx2.wait();
 
-            // PASSO 2: DEPOSIT COM ESTIMATIVA DE GÁS
-            // Adicionamos gasLimit para forçar a carteira a ler a transação corretamente
-            addLog("Executando transferência para o Vault...");
-            const depositTx = await vaultContract.deposit(amountWei, {
-                gasLimit: 150000 
-            });
-            
-            addLog("Sincronizando com a Blockchain...");
-            await depositTx.wait();
-
-            addLog("Sucesso Total! O seu saldo irá atualizar em breve.");
-            
-            // Verificação dupla do saldo real
-            setTimeout(updateRealBalance, 2000);
-            setTimeout(updateRealBalance, 5000); // Segunda verificação por segurança
-            
-        } catch (err) {
-            console.error(err);
-            addLog("Erro na transação. Verifique se tem ARC para o gás.");
-        }
+            log("Success! Updating...");
+            setTimeout(syncBalance, 3000);
+        } catch (e) { log("Transaction failed."); }
     };
 </script>
+</body>
+</html>
